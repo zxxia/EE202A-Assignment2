@@ -42,6 +42,7 @@ int main (int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    // Parse input file
     filename = argv[1];
     fp = fopen(filename, "r");
     if (fp == NULL) {
@@ -62,22 +63,28 @@ int main (int argc, char* argv[])
         }
     }
 
+    // Prepare gpio pin
+    gpio_export(gpio);
+    gpio_set_direction(gpio, GPIO_DIR_OUTPUT);
+
+    // Generate pwm
     i = 1;
     while(i < n_timestamps) {
         gpio_set_value(gpio, 1);
-        float diff = timestamps[i] - timestamps[i - 1];
+        interval.tv_sec = 0;
+        interval.tv_nsec = 1000; // pulse length is at least 10us
+        nanosleep(&interval, &rem);
 
+        float diff = timestamps[i] - timestamps[i - 1];
         interval.tv_sec = diff;
         interval.tv_nsec = (long)(diff * BILLION) - (long)(interval.tv_sec * BILLION);
         gpio_set_value(gpio, 0);
         nanosleep(&interval, &rem);
     }
 
-    // Prepare gpio pin
-    gpio_export(gpio);
-    gpio_set_direction(gpio, GPIO_DIR_OUTPUT);
 
-    // Recycle resources(gpio, fp)
+    // Recycle resources
+    free(timestamps);
     gpio_unexport(gpio);
     fclose(fp);
     exit(EXIT_SUCCESS);

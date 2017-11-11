@@ -45,6 +45,7 @@ int main (int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+    // Register the interrupt signal
     act.sa_handler = signal_handler;
     rv = sigaction(SIGINT, &act, NULL);
 
@@ -53,18 +54,21 @@ int main (int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
-
+    // Prepare input gpio pin
     gpio_export(gpio);
     gpio_set_direction(gpio, GPIO_DIR_INPUT);
-
-    memset((void*) &pollfdset, 0, sizeof(pollfdset));
-
-    pollfdset.fd = gpio_fd_open(gpio);
-    pollfdset.events = POLLPRI;
     gpio_set_edge(gpio, GPIO_RISING_EDGE);
 
+    // Prepare poll
+    memset((void*) &pollfdset, 0, sizeof(pollfdset));
+    pollfdset.fd = gpio_fd_open(gpio);
+    pollfdset.events = POLLPRI;
+
+    // start monitoring
     while(running) {
         pollfdset.revents = 0;
+
+        // poll blocks infinitely here if rising edge does not arrive
         rv = poll(&pollfdset, nfds, POLL_TIMEOUT_INF);
 
         if (rv < 0) {
@@ -85,6 +89,8 @@ int main (int argc, char* argv[])
             fprintf(fp, "%f\n", timestamp);
         }
     }
+
+    // Recycle system resources
     fclose(fp);
     gpio_fd_close(pollfdset.fd);
     gpio_unexport(gpio);
