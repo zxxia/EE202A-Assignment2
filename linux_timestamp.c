@@ -30,6 +30,20 @@ int main (int argc, char* argv[])
     struct timespec start_tp;
     struct timespec event_tp;
     int timestamping_started = 0;
+    char* filename;
+    FILE *fp;
+
+    if (argc < 2) {
+        fprintf(stdout, "Usage: ./linux_timestamp outputFile\n");
+        exit(EXIT_FAILURE);
+    }
+
+    filename = argv[1];
+    fp = fopen(filename, "w");
+    if (fp == NULL) {
+        fprintf(stderr, "Cannot create file %s\n", filename);
+        exit(EXIT_FAILURE);
+    }
 
     act.sa_handler = signal_handler;
     rv = sigaction(SIGINT, &act, NULL);
@@ -39,8 +53,9 @@ int main (int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
 
+
     gpio_export(gpio);
-    gpio_set_dir(gpio, GPIO_DIR_IN);
+    gpio_set_direction(gpio, GPIO_DIR_INPUT);
 
     memset((void*) &pollfdset, 0, sizeof(pollfdset));
 
@@ -67,9 +82,10 @@ int main (int argc, char* argv[])
 
             float timestamp = (float)(event_tp.tv_sec - start_tp.tv_sec) + (event_tp.tv_nsec - start_tp.tv_nsec) / BILLION;
 
-            fprintf(stdout, "%f\n", timestamp);
+            fprintf(fp, "%f\n", timestamp);
         }
     }
+    fclose(fp);
     gpio_fd_close(pollfdset.fd);
     gpio_unexport(gpio);
     exit(EXIT_SUCCESS);
