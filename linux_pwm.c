@@ -25,7 +25,7 @@ int count_timestamps(FILE* fp)
 int main (int argc, char* argv[])
 {
     int rv;
-    unsigned int gpio;
+    unsigned int gpio = 49;
     FILE *fp;
     char* line;
     int n_timestamps;

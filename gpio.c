@@ -68,10 +68,10 @@ int gpio_set_direction(unsigned int gpio, unsigned int dir)
     }
 
     if (dir == GPIO_DIR_OUTPUT) {
-        write(fd, "out", 3);
+        write(fd, "out", 4);
     }
     else {
-        write(fd, "in", 2);
+        write(fd, "in", 3);
     }
 }
 
@@ -90,7 +90,7 @@ int gpio_set_edge(unsigned int gpio, const char* edge)
         return fd;
     }
 
-    write(fd, edge, strlen(edge));
+    write(fd, edge, strlen(edge) + 1);
     close(fd);
     return 0;
 }
@@ -110,7 +110,7 @@ int gpio_set_value(unsigned int gpio, unsigned int val)
     }
 
     if (val) {
-        write(fd, "1", 1);
+        write(fd, "1", 2);
     }
     else {
         write(fd, "0", 2);
@@ -125,7 +125,7 @@ int gpio_fd_open(unsigned int gpio)
     int fd, len;
     char buf[MAX_BUF];
     len = snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR"/gpio%d/value", gpio);
-    fd = open(buf, O_RDONLY | O_NONBLOCK);
+    fd = open(buf, O_RDONLY);
     if (fd < 0) {
         perror("gpio/fd_open");
     }

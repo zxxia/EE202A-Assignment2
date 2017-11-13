@@ -1,10 +1,12 @@
 #include "gpio.h"
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <poll.h>
 #include <string.h>
 #include <time.h>
 #include <signal.h>
+#include <unistd.h>
 
 #define POLL_TIMEOUT_INF -1
 
@@ -24,7 +26,7 @@ int main (int argc, char* argv[])
     struct pollfd pollfdset;
     const int nfds = 1;
     int timeout, rv;
-    unsigned int gpio;
+    unsigned int gpio = 48;
     int len;
     clockid_t clk_id = CLOCK_MONOTONIC;
     struct timespec start_tp;
@@ -63,14 +65,19 @@ int main (int argc, char* argv[])
     memset((void*) &pollfdset, 0, sizeof(pollfdset));
     pollfdset.fd = gpio_fd_open(gpio);
     pollfdset.events = POLLPRI;
-
+    printf("gpio value fd: %d\n", pollfdset.fd);
     // start monitoring
+    int i = 0;
     while(running) {
         pollfdset.revents = 0;
 
+        char dummy[1];
+        lseek(pollfdset.fd, 0, SEEK_SET);
         // poll blocks infinitely here if rising edge does not arrive
+        read(pollfdset.fd, &dummy, 1);
         rv = poll(&pollfdset, nfds, POLL_TIMEOUT_INF);
-
+        printf("Returned events: %d\n", (int) pollfdset.revents);
+        printf("Poll returned: %d\n", rv);
         if (rv < 0) {
             perror("poll");
             exit(EXIT_FAILURE);
@@ -87,6 +94,8 @@ int main (int argc, char* argv[])
             float timestamp = (float)(event_tp.tv_sec - start_tp.tv_sec) + (event_tp.tv_nsec - start_tp.tv_nsec) / BILLION;
 
             fprintf(fp, "%f\n", timestamp);
+//            fprintf(stdout, "%d %f\n", i, timestamp);
+            i++;
         }
     }
 
