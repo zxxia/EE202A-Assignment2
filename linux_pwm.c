@@ -51,7 +51,7 @@ int main (int argc, char* argv[])
     }
 
     n_timestamps = count_timestamps(fp);
-
+    printf("number of lines = %d\n", n_timestamps);
     timestamps = (float*) malloc(sizeof(float) * n_timestamps);
     i = 0;
     while ((read = getline(&line, &len, fp)) != -1) {
@@ -61,6 +61,7 @@ int main (int argc, char* argv[])
             fclose(fp);
             exit(EXIT_FAILURE);
         }
+        i++;
     }
 
     // Prepare gpio pin
@@ -69,17 +70,26 @@ int main (int argc, char* argv[])
 
     // Generate pwm
     i = 1;
-    while(i < n_timestamps) {
-        gpio_set_value(gpio, 1);
-        interval.tv_sec = 0;
-        interval.tv_nsec = 1000; // pulse length is at least 10us
-        nanosleep(&interval, &rem);
+    gpio_set_value(gpio, 1);
+    interval.tv_sec = 0;
+    interval.tv_nsec = 10000; // pulse length is at least 10us
+    nanosleep(&interval, &rem);
+    gpio_set_value(gpio, 0);
 
+    while(i < n_timestamps) {
         float diff = timestamps[i] - timestamps[i - 1];
+        printf("%f sec\n", diff);
         interval.tv_sec = diff;
         interval.tv_nsec = (long)(diff * BILLION) - (long)(interval.tv_sec * BILLION);
-        gpio_set_value(gpio, 0);
         nanosleep(&interval, &rem);
+
+        gpio_set_value(gpio, 1);
+        interval.tv_sec = 0;
+        interval.tv_nsec = 10000; // pulse length is at least 10us
+        nanosleep(&interval, &rem);
+
+        gpio_set_value(gpio, 0);
+        i++;
     }
 
 

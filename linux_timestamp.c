@@ -7,6 +7,7 @@
 #include <time.h>
 #include <signal.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define POLL_TIMEOUT_INF -1
 
@@ -76,9 +77,10 @@ int main (int argc, char* argv[])
         // poll blocks infinitely here if rising edge does not arrive
         read(pollfdset.fd, &dummy, 1);
         rv = poll(&pollfdset, nfds, POLL_TIMEOUT_INF);
-        printf("Returned events: %d\n", (int) pollfdset.revents);
-        printf("Poll returned: %d\n", rv);
         if (rv < 0) {
+            if (errno == EINTR) {
+                break;
+            }
             perror("poll");
             exit(EXIT_FAILURE);
         }
@@ -94,7 +96,6 @@ int main (int argc, char* argv[])
             float timestamp = (float)(event_tp.tv_sec - start_tp.tv_sec) + (event_tp.tv_nsec - start_tp.tv_nsec) / BILLION;
 
             fprintf(fp, "%f\n", timestamp);
-//            fprintf(stdout, "%d %f\n", i, timestamp);
             i++;
         }
     }
